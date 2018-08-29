@@ -1,22 +1,58 @@
 ---
 # change this to `latest` to always get the most up to date version
 metricbeat_install_state: present
+metricbeat_version: 6.4.0
 
 # modules configuration
 metricbeat_modules:
   - module: system
     metricsets:
-      - filesystem
-    period: 1m
+    - cpu             # CPU usage
+    - load            # CPU load averages
+    - memory          # Memory usage
+    - network         # Network IO
+    - process         # Per process metrics
+    - process_summary # Process summary
+    - uptime          # System Uptime
+    - core            # Per CPU core usage
+    - diskio          # Disk IO
+    - filesystem      # File system usage for each mountpoint
+    - fsstat          # File system summary metrics
+    - raid            # Raid
+    - socket          # Sockets and connection info (linux only)
+    enabled: true
+    period: 10s
+    processes: ['.*']
+    # Configure the metric types that are included by these metricsets.
+    cpu.metrics:  ["percentages"]  # The other available options are normalized_percentages and ticks.
+    core.metrics: ["percentages"]  # The other available option is ticks.
     filters:
       # only include the root partition
       - drop_event.when.regexp.mount_point: ^/.+$
+  - module: docker
+    metricsets:
+      - "container"
+      - "cpu"
+      - "diskio"
+      - "healthcheck"
+      - "info"
+      - "image"
+      - "memory"
+      - "network"
+    hosts: ["unix:///var/run/docker.sock"]
+    period: 10s
+    enabled: true
 
 # output configuration
 metricbeat_output:
-  elasticsearch:
+  logstash:
     hosts:
-      - localhost:9200
+      - localhost:5044
+
 
 # general/global config options
-metricbeat_general_config: {}
+metricbeat_general_config: 
+  http.enabled: true
+  http.host: localhost
+  http.port: 5066
+
